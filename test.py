@@ -3,9 +3,9 @@ import json
 import re
 from collections import defaultdict
 
-paths = ['/workplace/penw/react/src/NodeJS-SmartHomeReactNative/src', '/workplace/penw/react/src/NodeJS-BehaviorsReactNative/src', '/workplace/penw/react/src/NodeJS-elements/src']
-matchStrings = ['/workplace\/penw\/react\/src\/NodeJS-SmartHomeReactNative\/src(.*)', '/workplace\/penw\/react\/src\/NodeJS-BehaviorsReactNative\/src(.*)', '/workplace\/penw\/react\/src\/NodeJS-elements\/src(.*)']
-modulenames = ['smart-home-react-native', 'behaviors-react-native', 'elements']
+paths = ['/workplace/penw/react/src/NodeJS-SmartHomeReactNative/src', '/workplace/penw/react/src/NodeJS-BehaviorsReactNative/src', '/workplace/penw/react/src/NodeJS-elements/src', '/workplace/penw/homeFeed/src/Elements-Homefeeds/src']
+matchStrings = ['/workplace\/penw\/react\/src\/NodeJS-SmartHomeReactNative\/src(.*)', '/workplace\/penw\/react\/src\/NodeJS-BehaviorsReactNative\/src(.*)', '/workplace\/penw\/react\/src\/NodeJS-elements\/src(.*)', '/workplace\/penw\/homeFeed\/src\/Elements-Homefeeds\/src(.*)']
+modulenames = ['smart-home-react-native', 'behaviors-react-native', 'elements', 'homefeeds']
 importRegex = '^import\s?{\s?(.*)}\s?from\s?\'(.*)\';$'
 
 mydict = lambda: defaultdict(mydict)
@@ -21,8 +21,7 @@ def search(path, matchString, modulename):
             for item in os.listdir(tmp):
                 stack.append(os.path.join(tmp, item))
         elif(os.path.isfile(tmp)):
-            if fileCallback:
-                read(tmp, matchString, modulename)
+			read(tmp, matchString, modulename)
 
     return data
 
@@ -35,7 +34,7 @@ def read(path, matchString, modulename):
 				continue
 			isEndOfLine = line[len(line) - 2] == ';'
 			isImport = line.startswith('import');
-			if line.startswith('\/'):
+			if line.startswith('\/') or line.startswith('*'):
 				continue;
 			if not flag and not isImport:
 				break
@@ -58,13 +57,16 @@ def read(path, matchString, modulename):
 					continue
 
 				components = importM.group(1).split(',')
+
 				file = importM.group(2)
+				# print file
 				if file.startswith('~'):
 					file = file.replace("~", modulename)
 				# for component in components:
 				# 	if component not in data[file]:
 				# 		data[file][component] = 0
 				# 	data[file][component] += 1
+
 
 				if file not in data:
 					data[file] = 0
@@ -82,9 +84,10 @@ def writeData():
 
 # d = search(path = elementsPath, fileCallback = read)
 
-for path, matchString, modulename in paths, matchStrings, modulenames:
+for path, matchString, modulename in zip(paths, matchStrings, modulenames):
+	# print modulename
 	search(path, matchString, modulename)
 
-# print data
+print data
 
-# writeData()
+writeData()
