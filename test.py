@@ -10,6 +10,8 @@ importRegex = '^import\s?{\s?(.*)}\s?from\s?\'(.*)\';$'
 
 mydict = lambda: defaultdict(mydict)
 data = mydict()
+countKey = 'count'
+componentKey = 'component'
 
 
 def search(path, matchString, modulename):
@@ -22,8 +24,6 @@ def search(path, matchString, modulename):
                 stack.append(os.path.join(tmp, item))
         elif(os.path.isfile(tmp)):
 			read(tmp, matchString, modulename)
-
-    return data
 
 def read(path, matchString, modulename):
 	flag = False
@@ -56,7 +56,8 @@ def read(path, matchString, modulename):
 				if importM.group(2).startswith('.'):
 					continue
 
-				components = importM.group(1).split(',')
+				components = [component.strip() for component in importM.group(1).split(',')]
+
 
 				file = importM.group(2)
 				# print file
@@ -69,17 +70,34 @@ def read(path, matchString, modulename):
 
 
 				if file not in data:
-					data[file] = 0
-				data[file] += 1
+					data[file][countKey] = 0
+
+				for component in components:
+					print component
+					if len(component) == 0:
+						continue
+					if component.startswith('//'):
+						continue
+					if component not in data[file][componentKey]:
+						data[file][componentKey][component] = 0
+					data[file][componentKey][component] += 1
+
+				data[file][countKey] += 1
 
 
 				# print importM.group(1), importM.group(2)
 				curStr = ''
 
 def writeData():
-	f = open('helloworld.txt','w')
+	f = open('paths.txt','w')
 	for file in data:
-		f.write(file + ' ' + str(data[file]) + '\n')
+		f.write(file + ' ' + str(data[file][countKey]) + '\n')
+	f.close()
+
+	f = open('components.txt', 'w')
+	for file in data:
+		for component in data[file][componentKey]:
+			f.write(file + ' ' + component + ' ' + str(data[file][componentKey][component]) + '\n')
 	f.close()
 
 # d = search(path = elementsPath, fileCallback = read)
@@ -88,6 +106,8 @@ for path, matchString, modulename in zip(paths, matchStrings, modulenames):
 	# print modulename
 	search(path, matchString, modulename)
 
-print data
+# # print data
 
 writeData()
+
+
