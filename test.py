@@ -10,6 +10,7 @@ importRegex = '^import\s?{\s?(.*)}\s?from\s?\'(.*)\';$'
 
 mydict = lambda: defaultdict(mydict)
 data = mydict()
+dependencies = mydict()
 countKey = 'count'
 componentKey = 'component'
 
@@ -24,6 +25,22 @@ def search(path, matchString, modulename):
                 stack.append(os.path.join(tmp, item))
         elif(os.path.isfile(tmp)):
 			read(tmp, matchString, modulename)
+
+def addToDependencies(path, file, matchString, modulename):
+	if path.endswith('styles.ts'):
+		return
+	m = re.search(matchString, path)
+	newPath = modulename + m.group(1)
+	if newPath not in dependencies:
+		dependencies[newPath] = []
+	dependencies[newPath].append(file)
+
+def findSelfSupportDependencies():
+	for path in dependencies.keys():
+		for component in dependencies[path]:
+			if not component.startswith('react') and not component.startswith('elements'):
+				del dependencies[path]
+				break
 
 def read(path, matchString, modulename):
 	flag = False
@@ -60,7 +77,6 @@ def read(path, matchString, modulename):
 
 
 				file = importM.group(2)
-				# print file
 				if file.startswith('~'):
 					file = file.replace("~", modulename)
 				# for component in components:
@@ -73,7 +89,6 @@ def read(path, matchString, modulename):
 					data[file][countKey] = 0
 
 				for component in components:
-					print component
 					if len(component) == 0:
 						continue
 					if component.startswith('//'):
@@ -82,11 +97,11 @@ def read(path, matchString, modulename):
 						data[file][componentKey][component] = 0
 					data[file][componentKey][component] += 1
 
+				addToDependencies(path, file, matchString, modulename)
+
 				data[file][countKey] += 1
-
-
-				# print importM.group(1), importM.group(2)
 				curStr = ''
+
 
 def writeData():
 	f = open('paths.txt','w')
@@ -95,10 +110,17 @@ def writeData():
 	f.close()
 
 	f = open('components.txt', 'w')
+
 	for file in data:
 		for component in data[file][componentKey]:
 			f.write(file + ' ' + component + ' ' + str(data[file][componentKey][component]) + '\n')
 	f.close()
+
+	f = open('dependencies.txt', 'w')
+	for dependency in dependencies:
+		f.write(dependency + ';' + ', '.join(dependencies[dependency]) + '\n')
+	f.close()
+
 
 # d = search(path = elementsPath, fileCallback = read)
 
@@ -107,6 +129,10 @@ for path, matchString, modulename in zip(paths, matchStrings, modulenames):
 	search(path, matchString, modulename)
 
 # # print data
+
+findSelfSupportDependencies()
+
+print dependencies
 
 writeData()
 
