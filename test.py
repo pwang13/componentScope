@@ -27,7 +27,7 @@ def search(path, matchString, modulename):
 			read(tmp, matchString, modulename)
 
 def addToDependencies(path, file, matchString, modulename):
-	if path.endswith('styles.ts'):
+	if path.endswith('styles.ts') or path.endswith('styles.tsx') or path.endswith('style.ts'):
 		return
 	m = re.search(matchString, path)
 	newPath = modulename + m.group(1)
@@ -51,7 +51,7 @@ def read(path, matchString, modulename):
 				continue
 			isEndOfLine = line[len(line) - 2] == ';'
 			isImport = line.startswith('import');
-			if line.startswith('\/') or line.startswith('*'):
+			if line.startswith('\/') or line.startswith('*') or line.startswith('/*'):
 				continue;
 			if not flag and not isImport:
 				break
